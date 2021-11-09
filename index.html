@@ -14,6 +14,8 @@
         </customHeaders>
     </httpProtocol>
 
+    <script> src = "./js/ViewerStartup.js"</script>
+
 </head>
 
 <body>
@@ -23,6 +25,12 @@
         import * as THREE from 'https://unpkg.com/three/build/three.module.js'
 
         import { OrbitControls } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js'
+
+       // import { ViewerStartup } from './js/ViewerStartup.js';
+
+       // let ccc = new ViewerStartup();
+
+       // ccc.startUp();
 
         let scene, camera, renderer, geometry, controls, material;
 
@@ -66,8 +74,6 @@
         function addSceneGeometry() {
 
             const geoObject = new THREE.TorusKnotGeometry(10, 3, 100, 16);
-
-        
 
          const material = new THREE.MeshPhongMaterial( {
 					color: 0xffffff,
