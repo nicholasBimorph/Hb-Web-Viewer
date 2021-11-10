@@ -24,21 +24,22 @@
 
         import * as THREE from 'https://unpkg.com/three/build/three.module.js'
 
+        import Stats from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/libs/stats.module.js'
+
         import { OrbitControls } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js'
-
-        // import { ViewerStartup } from './js/ViewerStartup.js';
-
-        // let ccc = new ViewerStartup();
-
-        // ccc.startUp();
 
         const httpClient = new XMLHttpRequest();
 
         const getLatestDataUrl = 'https://localhost:44313/ApplicationData/GetLatest';
 
-        let scene, camera, renderer, geometry, controls, material;
+        let scene, container, camera, renderer, geometry, controls, material, stats;
+
+        container = document.createElement('div');
+
+        document.body.appendChild(container);
 
         startup();
+
         animation();
 
         function startup() {
@@ -51,6 +52,12 @@
             grid.material.opacity = 0.2;
             grid.material.transparent = true;
             scene.add(grid);
+
+            stats = new Stats();
+
+            scene.add(stats);
+
+            container.appendChild(stats.dom);
 
             initCamara();
 
@@ -112,7 +119,7 @@
 
         function toThreeMesh(hbJsonMesh) {
 
-           
+
             const hbMesh = JSON.parse(hbJsonMesh);
 
             const faces = hbMesh.FaceIndexes.$values;
@@ -139,6 +146,8 @@
                     bufferVertices.push(vertexArray[j]);
                 }
 
+                //  bufferVertices.push(vertexArray[0],vertexArray[1],vertexArray[2]);
+
             }
 
             for (let i = 0; i < faces.length; i++) {
@@ -155,6 +164,8 @@
             geometry.setIndex(bufferIndices);
 
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(bufferVertices, 3));
+
+            geometry.computeVertexNormals();
 
             material = new THREE.MeshPhongMaterial({ color: 0xffffff, flatShading: true });
 
@@ -193,7 +204,7 @@
             dirLight1.position.set(1, 0.75, 0.5);
             scene.add(dirLight1);
 
-            const dirLight2 = new THREE.DirectionalLight(0xccccff, 1.1);
+            const dirLight2 = new THREE.DirectionalLight(0xccccff, 1);
             dirLight2.position.set(- 1, 0.75, - 0.5);
             scene.add(dirLight2);
 
@@ -206,6 +217,10 @@
         function animation() {
 
             requestAnimationFrame(animation);
+
+            controls.update();
+
+            stats.update();
 
             renderer.render(scene, camera);
         }
