@@ -50,8 +50,6 @@ export class ViewerStartup {
 
         const geoObject = new THREE.TorusKnotGeometry(10, 3, 100, 16);
 
-
-
         const material = new THREE.MeshPhongMaterial({
             color: 0xffffff,
             flatShading: true,

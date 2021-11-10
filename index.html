@@ -32,7 +32,11 @@
 
         // ccc.startUp();
 
-        let scene,mesh, camera, renderer, geometry, controls, material;
+        const httpClient = new XMLHttpRequest();
+
+        const getLatestDataUrl = 'https://localhost:44313/ApplicationData/GetLatest';
+
+        let scene, camera, renderer, geometry, controls, material;
 
         startup();
         animation();
@@ -56,7 +60,7 @@
 
             initLights();
 
-            addSceneGeometry();
+            getMeshesFromHbApi();
         }
 
         function initCamara() {
@@ -71,36 +75,98 @@
 
         }
 
-        function addSceneGeometry() {
 
-                const geoObject = new THREE.TorusKnotGeometry(10, 3, 100, 16);
+        function getMeshesFromHbApi() {
 
-             const material = new THREE.MeshPhongMaterial( {
-            			color: 0xffffff,
-            			flatShading: true,
-            			shininess: 0
-            		} );
-
-            	const wireframeMaterial = new THREE.MeshBasicMaterial( { color: 0x000000, wireframe: true, transparent: true } );
-
-                geometry = new THREE.Mesh(geoObject, material);
-
-                let wireframe = new THREE.Mesh( geoObject, wireframeMaterial );
-
-                geometry.add(wireframe);
-
-                scene.add(geometry);
+            httpClient.open("GET", getLatestDataUrl);
+            httpClient.send();
         }
 
-        function animation() {
 
-            requestAnimationFrame(animation);
+        httpClient.onreadystatechange = function () {
 
-            geometry.rotation.x += 0.01;
+            if (this.readyState == 4 && this.status == 200) {
 
-            geometry.rotation.y += 0.01
+                debugger;
 
-            renderer.render(scene, camera);
+                var json = httpClient.responseText;
+
+                var applicationDataContainer = JSON.parse(json);
+
+                var applicationData = applicationDataContainer.applicationData;
+
+                for (let i = 0; i < applicationData.length; i++) {
+
+                    let dataNode = applicationData[i];
+
+                    let nodeStorageType = dataNode.entityType;
+
+                    if (nodeStorageType != 'HB.RestAPI.Core.Types.HbMesh') continue;
+
+                    let mesh = toThreeMesh(dataNode.rawData);
+
+                    scene.add(mesh);
+
+                }
+
+
+            }
+        }
+
+        function toThreeMesh(hbJsonMesh) {
+
+            debugger;
+            const hbMesh = JSON.parse(hbJsonMesh);
+
+            const faces = hbMesh.FaceIndexes.$values;
+
+            const vertices = hbMesh.Vertices.$values;
+
+            const geometry = new THREE.BufferGeometry();
+
+            const faceIndices = [];
+
+            const bufferVertices = [];
+
+            for (let i = 0; i < vertices.length; i++) {
+
+                const vertexArray = vertices[i].$values;
+
+                // TODO: Check if THREE JS handles quad meshes.
+                // If incoming mesh quad - check.
+
+                //if(vertexArray.length ==4) continue;
+
+                for (let j = 0; j < vertexArray.length; j++) {
+
+                    bufferVertices.push(vertexArray[j]);
+                }
+
+            }
+
+            for (let i = 0; i < faceIndices.length; i++) {
+
+                const faceIndexArray = faceIndices[i].$values;
+
+                for (let j = 0; j < faceIndexArray.length; j++) {
+
+                    faceIndices.push(faceIndexArray[j]);
+                }
+
+            }
+
+            geometry.setIndex(faceIndices);
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(bufferGeoVertices, 3));
+
+            material = new THREE.MeshPhongMaterial({ color: 0xffffff, flatShading: true });
+
+            let mesh = new THREE.Mesh(geometry, material);
+
+            mesh.rotation.x = Math.PI / -2;
+
+            return mesh;
+
         }
 
         function initRenderer() {
@@ -140,6 +206,12 @@
         }
 
 
+        function animation() {
+
+            requestAnimationFrame(animation);
+
+            renderer.render(scene, camera);
+        }
 
     </script>
 
