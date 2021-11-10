@@ -87,8 +87,6 @@
 
             if (this.readyState == 4 && this.status == 200) {
 
-                debugger;
-
                 var json = httpClient.responseText;
 
                 var applicationDataContainer = JSON.parse(json);
@@ -109,13 +107,12 @@
 
                 }
 
-
             }
         }
 
         function toThreeMesh(hbJsonMesh) {
 
-            debugger;
+           
             const hbMesh = JSON.parse(hbJsonMesh);
 
             const faces = hbMesh.FaceIndexes.$values;
@@ -124,7 +121,7 @@
 
             const geometry = new THREE.BufferGeometry();
 
-            const faceIndices = [];
+            const bufferIndices = [];
 
             const bufferVertices = [];
 
@@ -144,20 +141,20 @@
 
             }
 
-            for (let i = 0; i < faceIndices.length; i++) {
+            for (let i = 0; i < faces.length; i++) {
 
-                const faceIndexArray = faceIndices[i].$values;
+                const faceIndexArray = faces[i].$values;
 
                 for (let j = 0; j < faceIndexArray.length; j++) {
 
-                    faceIndices.push(faceIndexArray[j]);
+                    bufferIndices.push(faceIndexArray[j]);
                 }
 
             }
 
-            geometry.setIndex(faceIndices);
+            geometry.setIndex(bufferIndices);
 
-            geometry.setAttribute('position', new THREE.Float32BufferAttribute(bufferGeoVertices, 3));
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(bufferVertices, 3));
 
             material = new THREE.MeshPhongMaterial({ color: 0xffffff, flatShading: true });
 
