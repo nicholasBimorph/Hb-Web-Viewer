@@ -10,7 +10,7 @@
 
     <httpProtocol>
         <customHeaders>
-            <add name="Access-Control-Allow-Origin" value="*" />
+            <add name="Access-Control-Allow-Origin" value="https://localhost:44313/" />
         </customHeaders>
     </httpProtocol>
 
@@ -26,13 +26,17 @@
 
         import { OrbitControls } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js'
 
-       // import { ViewerStartup } from './js/ViewerStartup.js';
+        // import { ViewerStartup } from './js/ViewerStartup.js';
 
-       // let ccc = new ViewerStartup();
+        // let ccc = new ViewerStartup();
 
-       // ccc.startUp();
+        // ccc.startUp();
 
-        let scene, camera, renderer, geometry, controls, material;
+        const Http = new XMLHttpRequest();
+
+        let scene,mesh, camera, renderer, geometry, controls, material;
+
+        const getLatestDataUrl = 'https://localhost:44313/ApplicationData/GetLatest';
 
         startup();
         animation();
@@ -56,10 +60,12 @@
 
             initLights();
 
-            addSceneGeometry(scene);
+            addSceneGeometry();
+
+            getGeometryFromBimorphApi();
         }
 
-        function initCamara(){
+        function initCamara() {
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
@@ -73,33 +79,129 @@
 
         function addSceneGeometry() {
 
-            const geoObject = new THREE.TorusKnotGeometry(10, 3, 100, 16);
+            //     const geoObject = new THREE.TorusKnotGeometry(10, 3, 100, 16);
 
-         const material = new THREE.MeshPhongMaterial( {
-					color: 0xffffff,
-					flatShading: true,
-					shininess: 0
-				} );
+            //  const material = new THREE.MeshPhongMaterial( {
+            // 			color: 0xffffff,
+            // 			flatShading: true,
+            // 			shininess: 0
+            // 		} );
 
-			const wireframeMaterial = new THREE.MeshBasicMaterial( { color: 0x000000, wireframe: true, transparent: true } );
+            // 	const wireframeMaterial = new THREE.MeshBasicMaterial( { color: 0x000000, wireframe: true, transparent: true } );
 
-            geometry = new THREE.Mesh(geoObject, material);
+            //     geometry = new THREE.Mesh(geoObject, material);
 
-            let wireframe = new THREE.Mesh( geoObject, wireframeMaterial );
+            //     let wireframe = new THREE.Mesh( geoObject, wireframeMaterial );
 
-            geometry.add(wireframe);
+            //     geometry.add(wireframe);
 
-            scene.add(geometry);
+            //     scene.add(geometry);
         }
+
+        // Convrts a BimorphMesh as a Json string
+        // to a Three.js mesh.
+        function toThreeMesh(bimorphMeshJson) {
+
+         
+
+            let bimorphMesh = JSON.parse(bimorphMeshJson);
+
+            
+            var faces = bimorphMesh.FaceIndexes.$values;
+
+            var vertices = bimorphMesh.Vertices.$values;
+
+  
+
+            const geometry = new THREE.BufferGeometry();
+            const indices = [];
+            const bufferGeoVertices = [];
+
+    
+        
+            //debugger;
+            for (var j = 0; j < vertices.length; j++) {
+
+                var vertArray = vertices[j].$values;
+
+                bufferGeoVertices.push(vertArray[0], vertArray[1], vertArray[2]);
+            }
+
+            for (let k = 0; k < faces.length; k++) {
+
+                var faceArray = faces[k].$values;
+
+                for (let m = 0; m < faceArray.length; m++) {
+
+                    indices.push(faceArray[m])
+                }
+
+            }
+
+           // debugger;
+            geometry.setIndex(indices);
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(bufferGeoVertices, 3));
+          // geometry.computeFaceNormals();
+
+            material = new THREE.MeshPhongMaterial({ color: 0xffffff, flatShading: true });
+            let mesh = new THREE.Mesh(geometry, material);
+            mesh.rotation.x = Math.PI / -2;
+
+            return mesh;
+
+        }
+
+        function getGeometryFromBimorphApi() {
+
+            Http.open("GET", getLatestDataUrl);
+            Http.send();
+
+        }
+
+        Http.onreadystatechange = function () {
+
+            if (this.readyState == 4 && this.status == 200) {
+
+             
+                var json = Http.responseText;
+
+                var nodeCollection = JSON.parse(json);
+
+                var nodes = nodeCollection.applicationData;
+
+                for (let i = 0; i < nodes.length; i++) {
+
+                    let node = nodes[i];
+
+                    let nodeStorageType = node.entityType;
+
+                    if (nodeStorageType != 'HB.RestAPI.Core.Types.HbMesh') continue;
+
+                    mesh = toThreeMesh(node.rawData)
+
+                    scene.add(mesh);
+
+                }
+
+           
+
+
+                // console.log(json)
+
+
+
+            }
+        }
+
 
 
         function animation() {
 
             requestAnimationFrame(animation);
 
-            geometry.rotation.x += 0.01;
+            // geometry.rotation.x += 0.01;
 
-             geometry.rotation.y += 0.01
+            // geometry.rotation.y += 0.01
 
             renderer.render(scene, camera);
 
